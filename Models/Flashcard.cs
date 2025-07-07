@@ -74,7 +74,7 @@ namespace JapaneseFlashcardApi.Models
         /// 最後複習日期
         /// 用戶最後一次複習此單字卡的時間
         /// </summary>
-        public DateTime LastReviewedDate { get; set; }
+        public DateTime? LastReviewedDate { get; set; }
 
         /// <summary>
         /// 複習次數

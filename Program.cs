@@ -1,4 +1,6 @@
 using JapaneseFlashcardApi.Services;
+using JapaneseFlashcardApi.Data;
+using Microsoft.EntityFrameworkCore;
 
 // 日文單字卡 Web API 應用程式進入點
 // 提供完整的日文學習單字卡管理功能
@@ -33,8 +35,30 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// 註冊自定義服務（依賴注入）
-builder.Services.AddScoped<IFlashcardService, FlashcardService>();
+// 資料庫配置
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (!string.IsNullOrEmpty(connectionString))
+{
+    // Railway PostgreSQL 格式轉換 (postgres://user:pass@host:port/database)
+    if (connectionString.StartsWith("postgres://"))
+    {
+        var uri = new Uri(connectionString);
+        connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+    }
+    
+    builder.Services.AddDbContext<FlashcardDbContext>(options =>
+        options.UseNpgsql(connectionString));
+    
+    // 使用資料庫服務
+    builder.Services.AddScoped<IFlashcardService, DatabaseFlashcardService>();
+}
+else
+{
+    // 如果沒有資料庫連接字串，使用記憶體服務（開發/測試用）
+    builder.Services.AddScoped<IFlashcardService, FlashcardService>();
+}
 
 // 配置 CORS（跨域請求）
 // 允許前端應用程式呼叫此 API
@@ -50,6 +74,24 @@ builder.Services.AddCors(options =>
 
 // 建立應用程式實例
 var app = builder.Build();
+
+// 資料庫自動遷移（僅在有資料庫時）
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetService<FlashcardDbContext>();
+    if (context != null)
+    {
+        try
+        {
+            context.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤但不停止應用程式啟動
+            Console.WriteLine($"Database migration failed: {ex.Message}");
+        }
+    }
+}
 
 // 配置 HTTP 請求處理管線
 if (app.Environment.IsDevelopment())
