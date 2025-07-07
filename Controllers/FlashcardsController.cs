@@ -160,5 +160,106 @@ namespace JapaneseFlashcardApi.Controllers
                 .ToList();
             return Ok(wordTypes);
         }
+
+        /// <summary>
+        /// 批量創建單字卡
+        /// </summary>
+        [HttpPost("batch")]
+        public async Task<ActionResult<BatchOperationResult>> CreateFlashcardsBatch([FromBody] BatchCreateFlashcardsDto batchDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!batchDto.Flashcards.Any())
+            {
+                return BadRequest("至少需要提供一個單字卡資料");
+            }
+
+            var result = await _flashcardService.CreateFlashcardsBatchAsync(batchDto);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 從 CSV 檔案匯入單字卡
+        /// </summary>
+        [HttpPost("import/csv")]
+        public async Task<ActionResult<BatchOperationResult>> ImportFromCsv(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("請選擇一個 CSV 檔案");
+            }
+
+            if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("檔案必須是 CSV 格式");
+            }
+
+            try
+            {
+                using var stream = file.OpenReadStream();
+                var result = await _flashcardService.ImportFromCsvAsync(stream);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"匯入失敗: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 匯出單字卡為 CSV 檔案
+        /// </summary>
+        [HttpGet("export/csv")]
+        public async Task<ActionResult> ExportToCsv([FromQuery] ExportOptionsDto options)
+        {
+            try
+            {
+                var csvData = await _flashcardService.ExportToCsvAsync(options);
+                var fileName = $"flashcards_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                
+                return File(csvData, "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"匯出失敗: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 匯出單字卡為 JSON 檔案
+        /// </summary>
+        [HttpGet("export/json")]
+        public async Task<ActionResult> ExportToJson([FromQuery] ExportOptionsDto options)
+        {
+            try
+            {
+                var jsonData = await _flashcardService.ExportToJsonAsync(options);
+                var fileName = $"flashcards_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+                
+                return File(System.Text.Encoding.UTF8.GetBytes(jsonData), "application/json", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"匯出失敗: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 取得 CSV 範本檔案
+        /// </summary>
+        [HttpGet("template/csv")]
+        public ActionResult GetCsvTemplate()
+        {
+            var csv = "Kanji,Hiragana,Katakana,Meaning,Example,WordType,Difficulty,Category\n" +
+                     "犬,いぬ,,狗,私の犬はとても可愛いです。,1,1,1\n" +
+                     ",,コーヒー,咖啡,朝のコーヒーは美味しいです。,2,1,3\n" +
+                     ",おはよう,,早安,おはようございます。,0,1,0";
+            
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+            return File(bytes, "text/csv", "flashcards_template.csv");
+        }
     }
 }

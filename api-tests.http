@@ -49,6 +49,73 @@ Content-Type: application/json
     "category": 0
 }
 
+### 批量創建單字卡
+POST https://localhost:7777/api/flashcards/batch
+Content-Type: application/json
+
+{
+    "flashcards": [
+        {
+            "kanji": "本",
+            "hiragana": "ほん",
+            "katakana": "",
+            "meaning": "書",
+            "example": "面白い本を読みました。",
+            "wordType": 1,
+            "difficulty": 1,
+            "category": 0
+        },
+        {
+            "kanji": "",
+            "hiragana": "",
+            "katakana": "パン",
+            "meaning": "麵包",
+            "example": "朝はパンを食べます。",
+            "wordType": 2,
+            "difficulty": 1,
+            "category": 3
+        },
+        {
+            "kanji": "",
+            "hiragana": "こんにちは",
+            "katakana": "",
+            "meaning": "你好",
+            "example": "こんにちは、元気ですか？",
+            "wordType": 0,
+            "difficulty": 1,
+            "category": 0
+        }
+    ],
+    "skipDuplicates": true,
+    "validateOnly": false
+}
+
+### 下載 CSV 範本
+GET https://localhost:7777/api/flashcards/template/csv
+
+### 從 CSV 匯入單字卡
+POST https://localhost:7777/api/flashcards/import/csv
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="sample_flashcards.csv"
+Content-Type: text/csv
+
+< ./sample_flashcards.csv
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 匯出所有單字卡為 CSV
+GET https://localhost:7777/api/flashcards/export/csv
+
+### 匯出特定分類為 CSV（動物類）
+GET https://localhost:7777/api/flashcards/export/csv?category=1
+
+### 匯出外來語單字為 JSON
+GET https://localhost:7777/api/flashcards/export/json?wordType=2
+
+### 匯出初學者難度為 JSON
+GET https://localhost:7777/api/flashcards/export/json?difficulty=1
+
 ### 更新單字卡
 PUT https://localhost:7777/api/flashcards/1
 Content-Type: application/json

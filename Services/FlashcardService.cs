@@ -1,4 +1,7 @@
 using JapaneseFlashcardApi.Models;
+using CsvHelper;
+using System.Globalization;
+using System.Text;
 
 namespace JapaneseFlashcardApi.Services
 {
@@ -11,6 +14,12 @@ namespace JapaneseFlashcardApi.Services
         Task<bool> DeleteFlashcardAsync(int id);
         Task<Flashcard?> MarkAsReviewedAsync(int id);
         Task<IEnumerable<Flashcard>> GetRandomFlashcardsAsync(int count, Category? category = null, DifficultyLevel? difficulty = null);
+        
+        // 批量操作
+        Task<BatchOperationResult> CreateFlashcardsBatchAsync(BatchCreateFlashcardsDto batchDto);
+        Task<BatchOperationResult> ImportFromCsvAsync(Stream csvStream);
+        Task<byte[]> ExportToCsvAsync(ExportOptionsDto options);
+        Task<string> ExportToJsonAsync(ExportOptionsDto options);
     }
 
     public class FlashcardService : IFlashcardService
@@ -224,6 +233,225 @@ namespace JapaneseFlashcardApi.Services
 
             var random = new Random();
             return flashcards.OrderBy(x => random.Next()).Take(count).ToList();
+        }
+
+        public async Task<BatchOperationResult> CreateFlashcardsBatchAsync(BatchCreateFlashcardsDto batchDto)
+        {
+            await Task.Delay(1);
+            
+            var result = new BatchOperationResult
+            {
+                TotalProcessed = batchDto.Flashcards.Count
+            };
+
+            foreach (var createDto in batchDto.Flashcards)
+            {
+                try
+                {
+                    // 檢查重複（如果設定要跳過重複）
+                    if (batchDto.SkipDuplicates)
+                    {
+                        var isDuplicate = _flashcards.Any(f => 
+                            f.Kanji == createDto.Kanji && 
+                            f.Hiragana == createDto.Hiragana && 
+                            f.Katakana == createDto.Katakana);
+                        
+                        if (isDuplicate)
+                        {
+                            result.ErrorCount++;
+                            result.ErrorMessages.Add($"重複的單字卡: {createDto.Kanji}{createDto.Hiragana}{createDto.Katakana}");
+                            continue;
+                        }
+                    }
+
+                    if (!batchDto.ValidateOnly)
+                    {
+                        var flashcard = await CreateFlashcardAsync(createDto);
+                        result.CreatedFlashcards.Add(flashcard);
+                    }
+                    
+                    result.SuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    result.ErrorCount++;
+                    result.ErrorMessages.Add($"創建失敗: {ex.Message}");
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<BatchOperationResult> ImportFromCsvAsync(Stream csvStream)
+        {
+            await Task.Delay(1);
+            
+            var result = new BatchOperationResult();
+            var createDtos = new List<CreateFlashcardDto>();
+
+            try
+            {
+                using var reader = new StreamReader(csvStream, Encoding.UTF8);
+                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+                
+                var records = csv.GetRecords<FlashcardCsvRecord>().ToList();
+                result.TotalProcessed = records.Count;
+
+                foreach (var record in records)
+                {
+                    try
+                    {
+                        // 驗證必填欄位
+                        if (string.IsNullOrWhiteSpace(record.Meaning))
+                        {
+                            result.ErrorCount++;
+                            result.ErrorMessages.Add($"第 {result.TotalProcessed - records.Count + result.SuccessCount + result.ErrorCount} 行: 意思為必填欄位");
+                            continue;
+                        }
+
+                        // 驗證枚舉值
+                        if (!Enum.IsDefined(typeof(WordType), record.WordType))
+                        {
+                            result.ErrorCount++;
+                            result.ErrorMessages.Add($"第 {result.TotalProcessed - records.Count + result.SuccessCount + result.ErrorCount} 行: 無效的單字類型 {record.WordType}");
+                            continue;
+                        }
+
+                        if (!Enum.IsDefined(typeof(DifficultyLevel), record.Difficulty))
+                        {
+                            result.ErrorCount++;
+                            result.ErrorMessages.Add($"第 {result.TotalProcessed - records.Count + result.SuccessCount + result.ErrorCount} 行: 無效的難度 {record.Difficulty}");
+                            continue;
+                        }
+
+                        if (!Enum.IsDefined(typeof(Category), record.Category))
+                        {
+                            result.ErrorCount++;
+                            result.ErrorMessages.Add($"第 {result.TotalProcessed - records.Count + result.SuccessCount + result.ErrorCount} 行: 無效的分類 {record.Category}");
+                            continue;
+                        }
+
+                        var createDto = new CreateFlashcardDto
+                        {
+                            Kanji = record.Kanji ?? string.Empty,
+                            Hiragana = record.Hiragana ?? string.Empty,
+                            Katakana = record.Katakana ?? string.Empty,
+                            Meaning = record.Meaning,
+                            Example = record.Example,
+                            WordType = (WordType)record.WordType,
+                            Difficulty = (DifficultyLevel)record.Difficulty,
+                            Category = (Category)record.Category
+                        };
+
+                        createDtos.Add(createDto);
+                    }
+                    catch (Exception ex)
+                    {
+                        result.ErrorCount++;
+                        result.ErrorMessages.Add($"處理 CSV 記錄時發生錯誤: {ex.Message}");
+                    }
+                }
+
+                // 批量創建有效的記錄
+                if (createDtos.Any())
+                {
+                    var batchResult = await CreateFlashcardsBatchAsync(new BatchCreateFlashcardsDto 
+                    { 
+                        Flashcards = createDtos,
+                        SkipDuplicates = true 
+                    });
+                    
+                    result.SuccessCount = batchResult.SuccessCount;
+                    result.ErrorCount += batchResult.ErrorCount;
+                    result.ErrorMessages.AddRange(batchResult.ErrorMessages);
+                    result.CreatedFlashcards = batchResult.CreatedFlashcards;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.ErrorCount = result.TotalProcessed;
+                result.ErrorMessages.Add($"CSV 匯入失敗: {ex.Message}");
+            }
+
+            return result;
+        }
+
+        public async Task<byte[]> ExportToCsvAsync(ExportOptionsDto options)
+        {
+            await Task.Delay(1);
+            
+            // 根據選項篩選數據
+            var query = new FlashcardQueryDto
+            {
+                Category = options.Category,
+                Difficulty = options.Difficulty,
+                WordType = options.WordType,
+                IsFavorite = options.IsFavorite,
+                PageSize = int.MaxValue
+            };
+
+            var flashcards = await GetAllFlashcardsAsync(query);
+            
+            using var memoryStream = new MemoryStream();
+            using var writer = new StreamWriter(memoryStream, Encoding.UTF8);
+            using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+
+            // 寫入 CSV 標頭
+            csv.WriteField("Kanji");
+            csv.WriteField("Hiragana");
+            csv.WriteField("Katakana");
+            csv.WriteField("Meaning");
+            csv.WriteField("Example");
+            csv.WriteField("WordType");
+            csv.WriteField("Difficulty");
+            csv.WriteField("Category");
+            csv.WriteField("CreatedDate");
+            csv.WriteField("ReviewCount");
+            csv.WriteField("IsFavorite");
+            csv.NextRecord();
+
+            // 寫入數據
+            foreach (var flashcard in flashcards)
+            {
+                csv.WriteField(flashcard.Kanji);
+                csv.WriteField(flashcard.Hiragana);
+                csv.WriteField(flashcard.Katakana);
+                csv.WriteField(flashcard.Meaning);
+                csv.WriteField(flashcard.Example);
+                csv.WriteField((int)flashcard.WordType);
+                csv.WriteField((int)flashcard.Difficulty);
+                csv.WriteField((int)flashcard.Category);
+                csv.WriteField(flashcard.CreatedDate.ToString("yyyy-MM-dd"));
+                csv.WriteField(flashcard.ReviewCount);
+                csv.WriteField(flashcard.IsFavorite);
+                csv.NextRecord();
+            }
+
+            writer.Flush();
+            return memoryStream.ToArray();
+        }
+
+        public async Task<string> ExportToJsonAsync(ExportOptionsDto options)
+        {
+            await Task.Delay(1);
+            
+            // 根據選項篩選數據
+            var query = new FlashcardQueryDto
+            {
+                Category = options.Category,
+                Difficulty = options.Difficulty,
+                WordType = options.WordType,
+                IsFavorite = options.IsFavorite,
+                PageSize = int.MaxValue
+            };
+
+            var flashcards = await GetAllFlashcardsAsync(query);
+            
+            return System.Text.Json.JsonSerializer.Serialize(flashcards, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
         }
     }
 }

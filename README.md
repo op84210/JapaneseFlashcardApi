@@ -7,6 +7,7 @@
 - ✅ 創建、讀取、更新、刪除單字卡
 - ✅ 平假名和片假名分別支援
 - ✅ 單字類型分類（日文原生詞/漢語詞/外來語/混合型）
+- ✅ 批量操作（批量創建、CSV匯入匯出、JSON匯出）
 - ✅ 按分類、難度和單字類型篩選
 - ✅ 搜索功能（漢字、平假名、片假名、意思）
 - ✅ 隨機獲取單字卡進行練習
@@ -54,6 +55,16 @@ JapaneseFlashcardApi/
 | POST | `/api/flashcards` | 創建新單字卡 |
 | PUT | `/api/flashcards/{id}` | 更新單字卡 |
 | DELETE | `/api/flashcards/{id}` | 刪除單字卡 |
+
+### 批量操作
+
+| 方法 | 端點 | 描述 |
+|------|------|------|
+| POST | `/api/flashcards/batch` | 批量創建單字卡 |
+| POST | `/api/flashcards/import/csv` | 從 CSV 檔案匯入單字卡 |
+| GET | `/api/flashcards/export/csv` | 匯出單字卡為 CSV 檔案 |
+| GET | `/api/flashcards/export/json` | 匯出單字卡為 JSON 檔案 |
+| GET | `/api/flashcards/template/csv` | 下載 CSV 範本檔案 |
 
 ### 學習功能
 
@@ -141,38 +152,42 @@ JapaneseFlashcardApi/
 
 ## 示例請求
 
-### 創建單字卡 - 外來語
+### 批量創建單字卡
 
 ```bash
-curl -X POST "https://localhost:7777/api/flashcards" \
+curl -X POST "https://localhost:7777/api/flashcards/batch" \
   -H "Content-Type: application/json" \
   -d '{
-    "kanji": "",
-    "hiragana": "",
-    "katakana": "コーヒー",
-    "meaning": "咖啡",
-    "example": "朝のコーヒーは美味しいです。",
-    "wordType": 2,
-    "difficulty": 1,
-    "category": 3
+    "flashcards": [
+      {
+        "kanji": "本",
+        "hiragana": "ほん",
+        "katakana": "",
+        "meaning": "書",
+        "wordType": 1,
+        "difficulty": 1,
+        "category": 0
+      }
+    ],
+    "skipDuplicates": true
   }'
 ```
 
-### 創建單字卡 - 日文原生詞
+### CSV 匯入匯出
 
 ```bash
-curl -X POST "https://localhost:7777/api/flashcards" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "kanji": "",
-    "hiragana": "ありがとう",
-    "katakana": "",
-    "meaning": "謝謝",
-    "example": "ありがとうございます。",
-    "wordType": 0,
-    "difficulty": 1,
-    "category": 0
-  }'
+# 下載 CSV 範本
+curl "https://localhost:7777/api/flashcards/template/csv" -o template.csv
+
+# 匯入 CSV 檔案
+curl -X POST "https://localhost:7777/api/flashcards/import/csv" \
+  -F "file=@sample_flashcards.csv"
+
+# 匯出為 CSV
+curl "https://localhost:7777/api/flashcards/export/csv" -o export.csv
+
+# 匯出特定分類為 JSON
+curl "https://localhost:7777/api/flashcards/export/json?category=1" -o animals.json
 ```
 
 ### 搜索單字卡（片假名）
