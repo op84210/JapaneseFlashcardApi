@@ -151,10 +151,33 @@ app.MapGet("/health", () => new {
     environment = app.Environment.EnvironmentName 
 });
 
+// 環境變數診斷端點（僅限開發/除錯用）
+app.MapGet("/debug/env", () => 
+{
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "not set";
+    var railwayEnvironment = Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT") ?? "not set";
+    
+    return new 
+    { 
+        timestamp = DateTime.UtcNow,
+        environment = app.Environment.EnvironmentName,
+        databaseUrl = new 
+        {
+            exists = databaseUrl != null,
+            length = databaseUrl?.Length ?? 0,
+            preview = databaseUrl?.Length > 0 ? databaseUrl.Substring(0, Math.Min(30, databaseUrl.Length)) + "..." : "empty"
+        },
+        port,
+        railwayEnvironment,
+        message = "檢查 Railway 控制台中的 DATABASE_URL 環境變數設定"
+    };
+});
+
 // 根路徑重導向到 Swagger
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
-// 取消 HTTPS 重導向（Railway 會在 Proxy 層處理 HTTPS）
+// 取消 HTTPS 重導向（Railway 會在 Proxy 層處處理 HTTPS）
 // app.UseHttpsRedirection();
 
 // 啟用 CORS
