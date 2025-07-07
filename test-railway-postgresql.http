@@ -1,11 +1,16 @@
 ### Railway PostgreSQL 部署測試
 
-# 1. 檢查 API 狀態
+# 1. 檢查環境變數診斷
+GET https://japaneseflashcardapi-production.up.railway.app/debug/env
+
+###
+
+# 2. 檢查 API 狀態
 GET https://japaneseflashcardapi-production.up.railway.app/
 
 ###
 
-# 2. 獲取所有單字卡（測試資料庫連線）
+# 3. 獲取所有單字卡（測試資料庫連線）
 GET https://japaneseflashcardapi-production.up.railway.app/api/flashcards
 
 ###
