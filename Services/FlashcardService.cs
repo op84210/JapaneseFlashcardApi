@@ -5,25 +5,105 @@ using System.Text;
 
 namespace JapaneseFlashcardApi.Services
 {
+    /// <summary>
+    /// 單字卡服務介面
+    /// 定義所有單字卡相關的業務邏輯操作
+    /// </summary>
     public interface IFlashcardService
     {
+        /// <summary>
+        /// 根據查詢條件取得所有單字卡
+        /// </summary>
+        /// <param name="query">查詢條件，包含篩選、搜尋、分頁等參數</param>
+        /// <returns>符合條件的單字卡清單</returns>
         Task<IEnumerable<Flashcard>> GetAllFlashcardsAsync(FlashcardQueryDto query);
+
+        /// <summary>
+        /// 根據 ID 取得特定單字卡
+        /// </summary>
+        /// <param name="id">單字卡的唯一識別碼</param>
+        /// <returns>找到的單字卡，若不存在則回傳 null</returns>
         Task<Flashcard?> GetFlashcardByIdAsync(int id);
+
+        /// <summary>
+        /// 創建新的單字卡
+        /// </summary>
+        /// <param name="createDto">包含新單字卡資料的 DTO</param>
+        /// <returns>成功創建的單字卡</returns>
         Task<Flashcard> CreateFlashcardAsync(CreateFlashcardDto createDto);
+
+        /// <summary>
+        /// 更新現有單字卡
+        /// </summary>
+        /// <param name="id">要更新的單字卡 ID</param>
+        /// <param name="updateDto">包含更新資料的 DTO</param>
+        /// <returns>更新後的單字卡，若單字卡不存在則回傳 null</returns>
         Task<Flashcard?> UpdateFlashcardAsync(int id, UpdateFlashcardDto updateDto);
+
+        /// <summary>
+        /// 刪除單字卡
+        /// </summary>
+        /// <param name="id">要刪除的單字卡 ID</param>
+        /// <returns>刪除成功回傳 true，單字卡不存在回傳 false</returns>
         Task<bool> DeleteFlashcardAsync(int id);
+
+        /// <summary>
+        /// 標記單字卡為已複習
+        /// 會更新最後複習時間和複習次數
+        /// </summary>
+        /// <param name="id">要標記的單字卡 ID</param>
+        /// <returns>更新後的單字卡，若單字卡不存在則回傳 null</returns>
         Task<Flashcard?> MarkAsReviewedAsync(int id);
+
+        /// <summary>
+        /// 取得隨機單字卡用於複習
+        /// </summary>
+        /// <param name="count">要取得的單字卡數量</param>
+        /// <param name="category">可選的分類篩選</param>
+        /// <param name="difficulty">可選的難易度篩選</param>
+        /// <returns>隨機選取的單字卡清單</returns>
         Task<IEnumerable<Flashcard>> GetRandomFlashcardsAsync(int count, Category? category = null, DifficultyLevel? difficulty = null);
         
-        // 批量操作
+        /// <summary>
+        /// 批量創建單字卡
+        /// </summary>
+        /// <param name="batchDto">包含批量創建資料的 DTO</param>
+        /// <returns>批量操作的結果統計</returns>
         Task<BatchOperationResult> CreateFlashcardsBatchAsync(BatchCreateFlashcardsDto batchDto);
+
+        /// <summary>
+        /// 從 CSV 檔案匯入單字卡
+        /// </summary>
+        /// <param name="csvStream">CSV 檔案的串流</param>
+        /// <returns>匯入操作的結果統計</returns>
         Task<BatchOperationResult> ImportFromCsvAsync(Stream csvStream);
+
+        /// <summary>
+        /// 匯出單字卡為 CSV 格式
+        /// </summary>
+        /// <param name="options">匯出選項和篩選條件</param>
+        /// <returns>CSV 檔案的位元組陣列</returns>
         Task<byte[]> ExportToCsvAsync(ExportOptionsDto options);
+
+        /// <summary>
+        /// 匯出單字卡為 JSON 格式
+        /// </summary>
+        /// <param name="options">匯出選項和篩選條件</param>
+        /// <returns>JSON 格式的字串</returns>
         Task<string> ExportToJsonAsync(ExportOptionsDto options);
     }
 
+    /// <summary>
+    /// 單字卡服務實作類別
+    /// 提供所有單字卡相關的業務邏輯實作
+    /// 目前使用記憶體儲存，生產環境建議改用資料庫
+    /// </summary>
     public class FlashcardService : IFlashcardService
     {
+        /// <summary>
+        /// 記憶體中的單字卡清單
+        /// 注意：應用程式重啟後資料會消失
+        /// </summary>
         private static readonly List<Flashcard> _flashcards = new()
         {
             new Flashcard
@@ -92,8 +172,17 @@ namespace JapaneseFlashcardApi.Services
             }
         };
 
+        /// <summary>
+        /// 下一個可用的單字卡 ID
+        /// 用於新增單字卡時自動產生唯一識別碼
+        /// </summary>
         private static int _nextId = 5;
 
+        /// <summary>
+        /// 根據查詢條件取得所有單字卡
+        /// </summary>
+        /// <param name="query">查詢條件，包含篩選、搜尋、分頁等參數</param>
+        /// <returns>符合條件的單字卡清單</returns>
         public async Task<IEnumerable<Flashcard>> GetAllFlashcardsAsync(FlashcardQueryDto query)
         {
             await Task.Delay(1); // 模擬異步操作
@@ -128,12 +217,22 @@ namespace JapaneseFlashcardApi.Services
                 .ToList();
         }
 
+        /// <summary>
+        /// 根據 ID 取得特定單字卡
+        /// </summary>
+        /// <param name="id">單字卡的唯一識別碼</param>
+        /// <returns>找到的單字卡，若不存在則回傳 null</returns>
         public async Task<Flashcard?> GetFlashcardByIdAsync(int id)
         {
             await Task.Delay(1);
             return _flashcards.FirstOrDefault(f => f.Id == id);
         }
 
+        /// <summary>
+        /// 創建新的單字卡
+        /// </summary>
+        /// <param name="createDto">包含新單字卡資料的 DTO</param>
+        /// <returns>成功創建的單字卡</returns>
         public async Task<Flashcard> CreateFlashcardAsync(CreateFlashcardDto createDto)
         {
             await Task.Delay(1);
@@ -159,6 +258,12 @@ namespace JapaneseFlashcardApi.Services
             return flashcard;
         }
 
+        /// <summary>
+        /// 更新現有單字卡
+        /// </summary>
+        /// <param name="id">要更新的單字卡 ID</param>
+        /// <param name="updateDto">包含更新資料的 DTO</param>
+        /// <returns>更新後的單字卡，若單字卡不存在則回傳 null</returns>
         public async Task<Flashcard?> UpdateFlashcardAsync(int id, UpdateFlashcardDto updateDto)
         {
             await Task.Delay(1);
@@ -196,6 +301,11 @@ namespace JapaneseFlashcardApi.Services
             return flashcard;
         }
 
+        /// <summary>
+        /// 刪除單字卡
+        /// </summary>
+        /// <param name="id">要刪除的單字卡 ID</param>
+        /// <returns>刪除成功回傳 true，單字卡不存在回傳 false</returns>
         public async Task<bool> DeleteFlashcardAsync(int id)
         {
             await Task.Delay(1);
@@ -207,6 +317,12 @@ namespace JapaneseFlashcardApi.Services
             return true;
         }
 
+        /// <summary>
+        /// 標記單字卡為已複習
+        /// 會更新最後複習時間和複習次數
+        /// </summary>
+        /// <param name="id">要標記的單字卡 ID</param>
+        /// <returns>更新後的單字卡，若單字卡不存在則回傳 null</returns>
         public async Task<Flashcard?> MarkAsReviewedAsync(int id)
         {
             await Task.Delay(1);
@@ -219,6 +335,13 @@ namespace JapaneseFlashcardApi.Services
             return flashcard;
         }
 
+        /// <summary>
+        /// 取得隨機單字卡用於複習
+        /// </summary>
+        /// <param name="count">要取得的單字卡數量</param>
+        /// <param name="category">可選的分類篩選</param>
+        /// <param name="difficulty">可選的難易度篩選</param>
+        /// <returns>隨機選取的單字卡清單</returns>
         public async Task<IEnumerable<Flashcard>> GetRandomFlashcardsAsync(int count, Category? category = null, DifficultyLevel? difficulty = null)
         {
             await Task.Delay(1);
@@ -235,6 +358,11 @@ namespace JapaneseFlashcardApi.Services
             return flashcards.OrderBy(x => random.Next()).Take(count).ToList();
         }
 
+        /// <summary>
+        /// 批量創建單字卡
+        /// </summary>
+        /// <param name="batchDto">包含批量創建資料的 DTO</param>
+        /// <returns>批量操作的結果統計</returns>
         public async Task<BatchOperationResult> CreateFlashcardsBatchAsync(BatchCreateFlashcardsDto batchDto)
         {
             await Task.Delay(1);
@@ -282,6 +410,11 @@ namespace JapaneseFlashcardApi.Services
             return result;
         }
 
+        /// <summary>
+        /// 從 CSV 檔案匯入單字卡
+        /// </summary>
+        /// <param name="csvStream">CSV 檔案的串流</param>
+        /// <returns>匯入操作的結果統計</returns>
         public async Task<BatchOperationResult> ImportFromCsvAsync(Stream csvStream)
         {
             await Task.Delay(1);
@@ -376,6 +509,11 @@ namespace JapaneseFlashcardApi.Services
             return result;
         }
 
+        /// <summary>
+        /// 匯出單字卡為 CSV 格式
+        /// </summary>
+        /// <param name="options">匯出選項和篩選條件</param>
+        /// <returns>CSV 檔案的位元組陣列</returns>
         public async Task<byte[]> ExportToCsvAsync(ExportOptionsDto options)
         {
             await Task.Delay(1);
@@ -431,6 +569,11 @@ namespace JapaneseFlashcardApi.Services
             return memoryStream.ToArray();
         }
 
+        /// <summary>
+        /// 匯出單字卡為 JSON 格式
+        /// </summary>
+        /// <param name="options">匯出選項和篩選條件</param>
+        /// <returns>JSON 格式的字串</returns>
         public async Task<string> ExportToJsonAsync(ExportOptionsDto options)
         {
             await Task.Delay(1);

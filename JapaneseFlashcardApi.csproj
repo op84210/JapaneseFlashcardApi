@@ -4,6 +4,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 啟用 XML 文件生成，用於 Swagger API 文件 -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- 關閉未使用 XML 註解的警告 -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,21 +4,38 @@ using JapaneseFlashcardApi.Services;
 
 namespace JapaneseFlashcardApi.Controllers
 {
+    /// <summary>
+    /// 日文單字卡 API 控制器
+    /// 提供單字卡的 CRUD 操作、查詢、複習、批量處理等功能
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class FlashcardsController : ControllerBase
     {
+        /// <summary>
+        /// 單字卡服務實例
+        /// </summary>
         private readonly IFlashcardService _flashcardService;
 
+        /// <summary>
+        /// 建構函式，注入單字卡服務
+        /// </summary>
+        /// <param name="flashcardService">單字卡服務介面</param>
         public FlashcardsController(IFlashcardService flashcardService)
         {
             _flashcardService = flashcardService;
         }
 
         /// <summary>
-        /// 獲取所有單字卡
+        /// 取得所有單字卡
+        /// 支援分類、難易度、單字類型篩選，以及關鍵字搜尋和分頁
         /// </summary>
+        /// <param name="query">查詢條件，包含篩選、搜尋、分頁參數</param>
+        /// <returns>符合條件的單字卡清單</returns>
+        /// <response code="200">成功取得單字卡清單</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Flashcard>), 200)]
         public async Task<ActionResult<IEnumerable<Flashcard>>> GetFlashcards([FromQuery] FlashcardQueryDto query)
         {
             var flashcards = await _flashcardService.GetAllFlashcardsAsync(query);
@@ -26,9 +43,15 @@ namespace JapaneseFlashcardApi.Controllers
         }
 
         /// <summary>
-        /// 根據 ID 獲取單字卡
+        /// 根據 ID 取得特定單字卡
         /// </summary>
+        /// <param name="id">單字卡的唯一識別碼</param>
+        /// <returns>指定的單字卡詳細資訊</returns>
+        /// <response code="200">成功取得單字卡</response>
+        /// <response code="404">找不到指定的單字卡</response>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(Flashcard), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<Flashcard>> GetFlashcard(int id)
         {
             var flashcard = await _flashcardService.GetFlashcardByIdAsync(id);
@@ -42,7 +65,13 @@ namespace JapaneseFlashcardApi.Controllers
         /// <summary>
         /// 創建新的單字卡
         /// </summary>
+        /// <param name="createDto">包含新單字卡資料的請求物件</param>
+        /// <returns>成功創建的單字卡</returns>
+        /// <response code="201">成功創建單字卡</response>
+        /// <response code="400">請求資料格式錯誤</response>
         [HttpPost]
+        [ProducesResponseType(typeof(Flashcard), 201)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult<Flashcard>> CreateFlashcard([FromBody] CreateFlashcardDto createDto)
         {
             if (!ModelState.IsValid)
@@ -55,9 +84,17 @@ namespace JapaneseFlashcardApi.Controllers
         }
 
         /// <summary>
-        /// 更新單字卡
+        /// 更新現有單字卡
+        /// 支援部分更新，只需提供要修改的欄位
         /// </summary>
+        /// <param name="id">要更新的單字卡 ID</param>
+        /// <param name="updateDto">包含更新資料的請求物件</param>
+        /// <returns>更新後的單字卡</returns>
+        /// <response code="200">成功更新單字卡</response>
+        /// <response code="404">找不到指定的單字卡</response>
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(Flashcard), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<Flashcard>> UpdateFlashcard(int id, [FromBody] UpdateFlashcardDto updateDto)
         {
             var flashcard = await _flashcardService.UpdateFlashcardAsync(id, updateDto);
@@ -69,9 +106,15 @@ namespace JapaneseFlashcardApi.Controllers
         }
 
         /// <summary>
-        /// 刪除單字卡
+        /// 刪除指定的單字卡
         /// </summary>
+        /// <param name="id">要刪除的單字卡 ID</param>
+        /// <returns>刪除操作結果</returns>
+        /// <response code="204">成功刪除單字卡</response>
+        /// <response code="404">找不到指定的單字卡</response>
         [HttpDelete("{id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult> DeleteFlashcard(int id)
         {
             var deleted = await _flashcardService.DeleteFlashcardAsync(id);
@@ -84,8 +127,15 @@ namespace JapaneseFlashcardApi.Controllers
 
         /// <summary>
         /// 標記單字卡為已複習
+        /// 會自動更新最後複習時間和複習次數
         /// </summary>
+        /// <param name="id">要標記的單字卡 ID</param>
+        /// <returns>更新後的單字卡</returns>
+        /// <response code="200">成功標記為已複習</response>
+        /// <response code="404">找不到指定的單字卡</response>
         [HttpPost("{id}/review")]
+        [ProducesResponseType(typeof(Flashcard), 200)]
+        [ProducesResponseType(404)]
         public async Task<ActionResult<Flashcard>> MarkAsReviewed(int id)
         {
             var flashcard = await _flashcardService.MarkAsReviewedAsync(id);
@@ -97,9 +147,18 @@ namespace JapaneseFlashcardApi.Controllers
         }
 
         /// <summary>
-        /// 獲取隨機單字卡用於練習
+        /// 取得隨機單字卡用於練習
+        /// 可依分類和難易度篩選
         /// </summary>
+        /// <param name="count">要取得的單字卡數量（1-50）</param>
+        /// <param name="category">可選的分類篩選</param>
+        /// <param name="difficulty">可選的難易度篩選</param>
+        /// <returns>隨機選取的單字卡清單</returns>
+        /// <response code="200">成功取得隨機單字卡</response>
+        /// <response code="400">參數驗證錯誤</response>
         [HttpGet("random")]
+        [ProducesResponseType(typeof(IEnumerable<Flashcard>), 200)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult<IEnumerable<Flashcard>>> GetRandomFlashcards(
             [FromQuery] int count = 5,
             [FromQuery] Category? category = null,
@@ -115,9 +174,12 @@ namespace JapaneseFlashcardApi.Controllers
         }
 
         /// <summary>
-        /// 獲取所有分類
+        /// 取得所有可用的單字分類
         /// </summary>
+        /// <returns>分類清單及其對應的數值和名稱</returns>
+        /// <response code="200">成功取得分類清單</response>
         [HttpGet("categories")]
+        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
         public ActionResult<IEnumerable<object>> GetCategories()
         {
             var categories = Enum.GetValues<Category>()
@@ -127,21 +189,38 @@ namespace JapaneseFlashcardApi.Controllers
         }
 
         /// <summary>
-        /// 獲取所有難度級別
+        /// 取得所有可用的難易度等級
         /// </summary>
+        /// <returns>難易度清單及其對應的數值和描述</returns>
+        /// <response code="200">成功取得難易度清單</response>
         [HttpGet("difficulties")]
+        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
         public ActionResult<IEnumerable<object>> GetDifficulties()
         {
             var difficulties = Enum.GetValues<DifficultyLevel>()
-                .Select(d => new { Value = (int)d, Name = d.ToString() })
+                .Select(d => new { 
+                    Value = (int)d, 
+                    Name = d.ToString(),
+                    Description = d switch
+                    {
+                        DifficultyLevel.Beginner => "初學者等級",
+                        DifficultyLevel.Intermediate => "中級等級", 
+                        DifficultyLevel.Advanced => "高級等級",
+                        DifficultyLevel.Expert => "專家等級",
+                        _ => ""
+                    }
+                })
                 .ToList();
             return Ok(difficulties);
         }
 
         /// <summary>
-        /// 獲取所有單字類型
+        /// 取得所有可用的單字類型
         /// </summary>
+        /// <returns>單字類型清單及其對應的數值和描述</returns>
+        /// <response code="200">成功取得單字類型清單</response>
         [HttpGet("wordtypes")]
+        [ProducesResponseType(typeof(IEnumerable<object>), 200)]
         public ActionResult<IEnumerable<object>> GetWordTypes()
         {
             var wordTypes = Enum.GetValues<WordType>()
@@ -162,9 +241,16 @@ namespace JapaneseFlashcardApi.Controllers
         }
 
         /// <summary>
-        /// 批量創建單字卡
+        /// 批量創建多個單字卡
+        /// 支援重複檢查和僅驗證模式
         /// </summary>
+        /// <param name="batchDto">批量創建請求資料</param>
+        /// <returns>批量操作結果統計</returns>
+        /// <response code="200">批量操作完成</response>
+        /// <response code="400">請求資料格式錯誤</response>
         [HttpPost("batch")]
+        [ProducesResponseType(typeof(BatchOperationResult), 200)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult<BatchOperationResult>> CreateFlashcardsBatch([FromBody] BatchCreateFlashcardsDto batchDto)
         {
             if (!ModelState.IsValid)
@@ -183,8 +269,15 @@ namespace JapaneseFlashcardApi.Controllers
 
         /// <summary>
         /// 從 CSV 檔案匯入單字卡
+        /// CSV 格式：Kanji,Hiragana,Katakana,Meaning,Example,WordType,Difficulty,Category
         /// </summary>
+        /// <param name="file">CSV 檔案</param>
+        /// <returns>匯入操作結果統計</returns>
+        /// <response code="200">匯入操作完成</response>
+        /// <response code="400">檔案格式錯誤或檔案為空</response>
         [HttpPost("import/csv")]
+        [ProducesResponseType(typeof(BatchOperationResult), 200)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult<BatchOperationResult>> ImportFromCsv(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -211,8 +304,15 @@ namespace JapaneseFlashcardApi.Controllers
 
         /// <summary>
         /// 匯出單字卡為 CSV 檔案
+        /// 支援依條件篩選要匯出的單字卡
         /// </summary>
+        /// <param name="options">匯出選項和篩選條件</param>
+        /// <returns>CSV 檔案下載</returns>
+        /// <response code="200">成功匯出 CSV 檔案</response>
+        /// <response code="400">匯出過程發生錯誤</response>
         [HttpGet("export/csv")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult> ExportToCsv([FromQuery] ExportOptionsDto options)
         {
             try
@@ -230,8 +330,15 @@ namespace JapaneseFlashcardApi.Controllers
 
         /// <summary>
         /// 匯出單字卡為 JSON 檔案
+        /// 支援依條件篩選要匯出的單字卡
         /// </summary>
+        /// <param name="options">匯出選項和篩選條件</param>
+        /// <returns>JSON 檔案下載</returns>
+        /// <response code="200">成功匯出 JSON 檔案</response>
+        /// <response code="400">匯出過程發生錯誤</response>
         [HttpGet("export/json")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
         public async Task<ActionResult> ExportToJson([FromQuery] ExportOptionsDto options)
         {
             try
@@ -248,9 +355,13 @@ namespace JapaneseFlashcardApi.Controllers
         }
 
         /// <summary>
-        /// 取得 CSV 範本檔案
+        /// 下載 CSV 匯入範本檔案
+        /// 包含範例資料和正確的欄位格式
         /// </summary>
+        /// <returns>CSV 範本檔案</returns>
+        /// <response code="200">成功下載範本檔案</response>
         [HttpGet("template/csv")]
+        [ProducesResponseType(200)]
         public ActionResult GetCsvTemplate()
         {
             var csv = "Kanji,Hiragana,Katakana,Meaning,Example,WordType,Difficulty,Category\n" +
