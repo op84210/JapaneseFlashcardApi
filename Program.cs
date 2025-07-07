@@ -36,8 +36,11 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // 資料庫配置
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+}
 
 Console.WriteLine($"🔍 環境變數檢查:");
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
