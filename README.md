@@ -1,6 +1,12 @@
 # 日文單字卡 API
 
-一個基於 .NET 8.0 的 Web API，用於管理日文單字卡學習系統。
+一個基於 .NET 8.0 的 Web API，用於管理日文單字卡學習系統。已成功部署到 Railway 雲端平台，使用 PostgreSQL 資料庫儲存。
+
+## 🚀 線上版本
+
+- **API 地址**: https://japaneseflashcardapi-production.up.railway.app
+- **Swagger 文檔**: https://japaneseflashcardapi-production.up.railway.app/swagger
+- **資料庫**: Railway PostgreSQL（資料持久化）
 
 ## 功能特色
 
@@ -14,10 +20,16 @@
 - ✅ 標記最愛和複習追蹤
 - ✅ 分頁功能
 - ✅ Swagger UI 文檔
+- ✅ PostgreSQL 資料庫儲存
+- ✅ Railway 雲端部署
+
+## 🧪 API 測試
+
+使用 `test-railway-postgresql.http` 檔案測試線上 API 功能。
 
 ## 快速開始
 
-### 運行 API
+### 本地開發
 
 ```bash
 cd JapaneseFlashcardApi
@@ -28,6 +40,10 @@ API 將在以下地址運行：
 - HTTPS: https://localhost:7777
 - HTTP: http://localhost:5555
 - Swagger UI: https://localhost:7777 (開發環境中自動跳轉)
+
+### 部署
+
+參閱 `RAILWAY_DEPLOY.md` 了解如何部署到 Railway 平台。
 
 ### 項目結構
 
