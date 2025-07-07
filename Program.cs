@@ -58,13 +58,27 @@ if (!string.IsNullOrEmpty(connectionString))
     Console.WriteLine("🗄️  使用 PostgreSQL 資料庫儲存");
     Console.WriteLine($"   連接目標: {connectionString.Substring(0, Math.Min(50, connectionString.Length))}...");
     
-    // Railway PostgreSQL 格式轉換 (postgres://user:pass@host:port/database)
-    if (connectionString.StartsWith("postgres://"))
+    // Railway PostgreSQL 格式轉換 (postgresql://user:pass@host:port/database 或 postgres://user:pass@host:port/database)
+    if (connectionString.StartsWith("postgresql://") || connectionString.StartsWith("postgres://"))
     {
         Console.WriteLine("🔄 轉換 Railway PostgreSQL 連接格式...");
-        var uri = new Uri(connectionString);
-        connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
-        Console.WriteLine($"   轉換後格式: Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')}...");
+        try
+        {
+            var uri = new Uri(connectionString);
+            var userInfo = uri.UserInfo.Split(':');
+            var username = userInfo[0];
+            var password = userInfo.Length > 1 ? userInfo[1] : "";
+            var database = uri.AbsolutePath.Trim('/');
+            
+            connectionString = $"Host={uri.Host};Port={uri.Port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+            Console.WriteLine($"   轉換後格式: Host={uri.Host};Port={uri.Port};Database={database};Username={username};...");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"   ❌ URI 解析失敗: {ex.Message}");
+            Console.WriteLine($"   原始連接字串: {connectionString}");
+            throw;
+        }
     }
     
     builder.Services.AddDbContext<FlashcardDbContext>(options =>
