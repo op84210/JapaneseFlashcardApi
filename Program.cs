@@ -39,15 +39,22 @@ builder.Services.AddSwaggerGen(c =>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
+Console.WriteLine($"🔍 環境變數檢查:");
+Console.WriteLine($"   DATABASE_URL: {(Environment.GetEnvironmentVariable("DATABASE_URL") != null ? "已設定" : "未設定")}");
+Console.WriteLine($"   連接字串長度: {connectionString?.Length ?? 0}");
+
 if (!string.IsNullOrEmpty(connectionString))
 {
     Console.WriteLine("🗄️  使用 PostgreSQL 資料庫儲存");
+    Console.WriteLine($"   連接目標: {connectionString.Substring(0, Math.Min(50, connectionString.Length))}...");
     
     // Railway PostgreSQL 格式轉換 (postgres://user:pass@host:port/database)
     if (connectionString.StartsWith("postgres://"))
     {
+        Console.WriteLine("🔄 轉換 Railway PostgreSQL 連接格式...");
         var uri = new Uri(connectionString);
         connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+        Console.WriteLine($"   轉換後格式: Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')}...");
     }
     
     builder.Services.AddDbContext<FlashcardDbContext>(options =>
