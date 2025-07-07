@@ -41,6 +41,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 if (!string.IsNullOrEmpty(connectionString))
 {
+    Console.WriteLine("🗄️  使用 PostgreSQL 資料庫儲存");
+    
     // Railway PostgreSQL 格式轉換 (postgres://user:pass@host:port/database)
     if (connectionString.StartsWith("postgres://"))
     {
@@ -56,6 +58,9 @@ if (!string.IsNullOrEmpty(connectionString))
 }
 else
 {
+    Console.WriteLine("🧠 使用記憶體儲存（開發模式）");
+    Console.WriteLine("   注意：資料在應用程式重啟後會消失");
+    
     // 如果沒有資料庫連接字串，使用記憶體服務（開發/測試用）
     builder.Services.AddScoped<IFlashcardService, FlashcardService>();
 }
@@ -83,13 +88,21 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            context.Database.Migrate();
+            Console.WriteLine("🔄 開始資料庫遷移...");
+            await context.Database.EnsureCreatedAsync();
+            Console.WriteLine("✅ 資料庫遷移完成");
         }
         catch (Exception ex)
         {
-            // 記錄錯誤但不停止應用程式啟動
-            Console.WriteLine($"Database migration failed: {ex.Message}");
+            // 記錄詳細錯誤但不停止應用程式啟動
+            Console.WriteLine($"❌ 資料庫遷移失敗: {ex.Message}");
+            Console.WriteLine($"詳細錯誤: {ex}");
+            Console.WriteLine("⚠️  將使用記憶體儲存模式");
         }
+    }
+    else
+    {
+        Console.WriteLine("ℹ️  未配置資料庫，使用記憶體儲存");
     }
 }
 

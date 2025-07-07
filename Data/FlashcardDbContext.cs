@@ -87,6 +87,8 @@ namespace JapaneseFlashcardApi.Data
         /// </summary>
         private static void SeedData(ModelBuilder modelBuilder)
         {
+            var baseDate = new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+            
             modelBuilder.Entity<Flashcard>().HasData(
                 new Flashcard
                 {
@@ -99,8 +101,8 @@ namespace JapaneseFlashcardApi.Data
                     WordType = WordType.SinoJapanese,
                     Difficulty = DifficultyLevel.Beginner,
                     Category = Category.Animals,
-                    CreatedDate = DateTime.UtcNow.AddDays(-30),
-                    LastReviewedDate = DateTime.UtcNow.AddDays(-5),
+                    CreatedDate = baseDate.AddDays(7),
+                    LastReviewedDate = baseDate.AddDays(32),
                     ReviewCount = 3,
                     IsFavorite = true
                 },
@@ -115,8 +117,8 @@ namespace JapaneseFlashcardApi.Data
                     WordType = WordType.Foreign,
                     Difficulty = DifficultyLevel.Beginner,
                     Category = Category.Food,
-                    CreatedDate = DateTime.UtcNow.AddDays(-25),
-                    LastReviewedDate = DateTime.UtcNow.AddDays(-3),
+                    CreatedDate = baseDate.AddDays(12),
+                    LastReviewedDate = baseDate.AddDays(34),
                     ReviewCount = 5,
                     IsFavorite = false
                 },
@@ -131,8 +133,8 @@ namespace JapaneseFlashcardApi.Data
                     WordType = WordType.Native,
                     Difficulty = DifficultyLevel.Beginner,
                     Category = Category.General,
-                    CreatedDate = DateTime.UtcNow.AddDays(-20),
-                    LastReviewedDate = DateTime.UtcNow.AddDays(-2),
+                    CreatedDate = baseDate.AddDays(17),
+                    LastReviewedDate = baseDate.AddDays(35),
                     ReviewCount = 2,
                     IsFavorite = true
                 },
@@ -147,7 +149,7 @@ namespace JapaneseFlashcardApi.Data
                     WordType = WordType.Foreign,
                     Difficulty = DifficultyLevel.Intermediate,
                     Category = Category.General,
-                    CreatedDate = DateTime.UtcNow.AddDays(-15),
+                    CreatedDate = baseDate.AddDays(22),
                     LastReviewedDate = null,
                     ReviewCount = 1,
                     IsFavorite = false
