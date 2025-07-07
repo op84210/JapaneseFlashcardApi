@@ -1,0 +1,40 @@
+# .dockerignore
+# 忽略建置產物
+bin/
+obj/
+out/
+
+# 忽略 Visual Studio 檔案
+.vs/
+.vscode/
+*.user
+*.suo
+
+# 忽略 Git 檔案
+.git/
+.gitignore
+
+# 忽略日誌檔案
+*.log
+
+# 忽略暫存檔案
+**/temp/
+**/tmp/
+
+# 忽略 Node.js 相關檔案
+node_modules/
+npm-debug.log
+
+# 忽略測試覆蓋率報告
+**/TestResults/
+**/*.trx
+
+# 忽略 Docker 檔案本身
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# 忽略文件檔案
+README.md
+LICENSE
+*.md

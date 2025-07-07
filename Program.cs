@@ -5,6 +5,10 @@ using JapaneseFlashcardApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Railway PORT 支援 - 雲端部署時使用動態 PORT
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 // 註冊控制器服務
 builder.Services.AddControllers();
 
@@ -59,9 +63,30 @@ if (app.Environment.IsDevelopment())
         c.DocumentTitle = "日文單字卡 API 文件";
     });
 }
+else
+{
+    // 生產環境也啟用 Swagger（方便測試）
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Japanese Flashcard API v1");
+        c.RoutePrefix = string.Empty;
+        c.DocumentTitle = "日文單字卡 API 文件";
+    });
+}
 
-// 啟用 HTTPS 重導向
-app.UseHttpsRedirection();
+// 健康檢查端點（Railway 部署需要）
+app.MapGet("/health", () => new { 
+    status = "healthy", 
+    timestamp = DateTime.UtcNow,
+    environment = app.Environment.EnvironmentName 
+});
+
+// 根路徑重導向到 Swagger
+app.MapGet("/", () => Results.Redirect("/swagger"));
+
+// 取消 HTTPS 重導向（Railway 會在 Proxy 層處理 HTTPS）
+// app.UseHttpsRedirection();
 
 // 啟用 CORS
 app.UseCors("AllowAll");

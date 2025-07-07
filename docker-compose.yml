@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # 日文單字卡 API 服務
+  flashcard-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: japanese-flashcard-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=flashcard-db;Initial Catalog=FlashcardDB;User ID=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+    depends_on:
+      - flashcard-db
+    restart: unless-stopped
+    networks:
+      - flashcard-network
+
+  # SQL Server 資料庫服務
+  flashcard-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: flashcard-database
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - flashcard_data:/var/opt/mssql
+    restart: unless-stopped
+    networks:
+      - flashcard-network
+
+  # Nginx 反向代理（可選）
+  nginx:
+    image: nginx:alpine
+    container_name: flashcard-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - flashcard-api
+    restart: unless-stopped
+    networks:
+      - flashcard-network
+
+volumes:
+  flashcard_data:
+    driver: local
+
+networks:
+  flashcard-network:
+    driver: bridge
