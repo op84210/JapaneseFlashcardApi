@@ -40,8 +40,15 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
 Console.WriteLine($"🔍 環境變數檢查:");
-Console.WriteLine($"   DATABASE_URL: {(Environment.GetEnvironmentVariable("DATABASE_URL") != null ? "已設定" : "未設定")}");
-Console.WriteLine($"   連接字串長度: {connectionString?.Length ?? 0}");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+Console.WriteLine($"   DATABASE_URL 存在: {databaseUrl != null}");
+Console.WriteLine($"   DATABASE_URL 長度: {databaseUrl?.Length ?? 0}");
+Console.WriteLine($"   DATABASE_URL 值: '{databaseUrl ?? "null"}'");
+Console.WriteLine($"   最終連接字串長度: {connectionString?.Length ?? 0}");
+if (!string.IsNullOrEmpty(connectionString))
+{
+    Console.WriteLine($"   連接字串前50字元: '{connectionString.Substring(0, Math.Min(50, connectionString.Length))}'");
+}
 
 if (!string.IsNullOrEmpty(connectionString))
 {

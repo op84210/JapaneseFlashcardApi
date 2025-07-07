@@ -1,0 +1,53 @@
+### Railway PostgreSQL 部署測試
+
+# 1. 檢查 API 狀態
+GET https://japaneseflashcardapi-production.up.railway.app/
+
+###
+
+# 2. 獲取所有單字卡（測試資料庫連線）
+GET https://japaneseflashcardapi-production.up.railway.app/api/flashcards
+
+###
+
+# 3. 新增一張測試單字卡（驗證資料持久化）
+POST https://japaneseflashcardapi-production.up.railway.app/api/flashcards
+Content-Type: application/json
+
+{
+  "japaneseText": "テスト",
+  "hiragana": "てすと",
+  "englishTranslation": "test",
+  "difficulty": 1,
+  "tags": ["測試", "Railway", "PostgreSQL"]
+}
+
+###
+
+# 4. 再次獲取所有單字卡（確認新資料已保存）
+GET https://japaneseflashcardapi-production.up.railway.app/api/flashcards
+
+###
+
+# 5. 測試批量匯入
+POST https://japaneseflashcardapi-production.up.railway.app/api/flashcards/batch
+Content-Type: application/json
+
+{
+  "flashcards": [
+    {
+      "japaneseText": "データベース",
+      "hiragana": "でーたべーす", 
+      "englishTranslation": "database",
+      "difficulty": 2,
+      "tags": ["技術", "Railway"]
+    },
+    {
+      "japaneseText": "クラウド",
+      "hiragana": "くらうど",
+      "englishTranslation": "cloud", 
+      "difficulty": 2,
+      "tags": ["技術", "部署"]
+    }
+  ]
+}
