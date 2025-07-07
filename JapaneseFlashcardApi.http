@@ -1,0 +1,6 @@
+@JapaneseFlashcardApi_HostAddress = http://localhost:5258
+
+GET {{JapaneseFlashcardApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

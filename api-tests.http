@@ -1,0 +1,92 @@
+### 獲取所有單字卡
+GET https://localhost:7777/api/flashcards
+
+### 獲取特定單字卡
+GET https://localhost:7777/api/flashcards/1
+
+### 創建新單字卡 - 漢字詞（漢語系）
+POST https://localhost:7777/api/flashcards
+Content-Type: application/json
+
+{
+    "kanji": "水",
+    "hiragana": "みず",
+    "katakana": "",
+    "meaning": "水",
+    "example": "水を飲みます。",
+    "wordType": 1,
+    "difficulty": 1,
+    "category": 4
+}
+
+### 創建新單字卡 - 外來語（片假名）
+POST https://localhost:7777/api/flashcards
+Content-Type: application/json
+
+{
+    "kanji": "",
+    "hiragana": "",
+    "katakana": "テーブル",
+    "meaning": "桌子",
+    "example": "新しいテーブルを買いました。",
+    "wordType": 2,
+    "difficulty": 1,
+    "category": 0
+}
+
+### 創建新單字卡 - 日文原生詞（平假名）
+POST https://localhost:7777/api/flashcards
+Content-Type: application/json
+
+{
+    "kanji": "",
+    "hiragana": "ありがとう",
+    "katakana": "",
+    "meaning": "謝謝",
+    "example": "ありがとうございます。",
+    "wordType": 0,
+    "difficulty": 1,
+    "category": 0
+}
+
+### 更新單字卡
+PUT https://localhost:7777/api/flashcards/1
+Content-Type: application/json
+
+{
+    "isFavorite": true,
+    "katakana": "いぬ"
+}
+
+### 標記為已複習
+POST https://localhost:7777/api/flashcards/1/review
+
+### 獲取隨機單字卡
+GET https://localhost:7777/api/flashcards/random?count=3&category=1
+
+### 獲取所有分類
+GET https://localhost:7777/api/flashcards/categories
+
+### 獲取所有難度
+GET https://localhost:7777/api/flashcards/difficulties
+
+### 獲取所有單字類型
+GET https://localhost:7777/api/flashcards/wordtypes
+
+### 搜索單字卡（支援平假名和片假名）
+GET https://localhost:7777/api/flashcards?searchTerm=コーヒー&pageSize=5
+
+### 按單字類型過濾 - 只顯示外來語
+GET https://localhost:7777/api/flashcards?wordType=2
+
+### 按單字類型過濾 - 只顯示日文原生詞
+GET https://localhost:7777/api/flashcards?wordType=0
+
+### 組合過濾 - 外來語 + 初學者難度
+GET https://localhost:7777/api/flashcards?wordType=2&difficulty=1
+
+### 搜索平假名
+GET https://localhost:7777/api/flashcards?searchTerm=おはよう
+
+### 搜索片假名
+GET https://localhost:7777/api/flashcards?searchTerm=コンピューター
